@@ -4,3 +4,4 @@ peft
 torch
 datasets
 accelerate
+streamlit

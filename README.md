@@ -47,6 +47,25 @@ The core logic for training and inference is contained within the `FLAN_T5.ipynb
 *   Training the model.
 *   Generating motivational nudges based on user input and mood.
 
+### Running the Streamlit App
+
+To run the interactive web application:
+
+```bash
+streamlit run app.py
+```
+
+This will open a local web server, and you can access the application in your browser.
+
+### Running the Jupyter Notebook
+
+The core logic for training and inference is contained within the `FLAN_T5.ipynb` Jupyter Notebook. This notebook demonstrates:
+
+*   Data loading and preprocessing from `nudge_balanced_740.csv`.
+*   Configuration and application of LoRA for fine-tuning the FLAN-T5 model.
+*   Training the model.
+*   Generating motivational nudges based on user input and mood.
+
 To run the notebook:
 
 ```bash
@@ -55,6 +74,7 @@ jupyter notebook FLAN_T5.ipynb
 
 ## Files in this Repository
 
+*   `app.py`: The Streamlit web application for interacting with the FLAN-T5 Motivation Model.
 *   `FLAN_T5.ipynb`: The main Jupyter Notebook containing the model training, fine-tuning, and inference code.
 *   `flan_nudge_balanced_best.zip`: Compressed file containing the fine-tuned model weights.
 *   `nudge_balanced_740.csv`: The custom-built dataset used for training the model.
