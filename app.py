@@ -2,6 +2,7 @@ import streamlit as st
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from peft import PeftModel
 from pathlib import Path
+import html
 import re
 
 
@@ -104,42 +105,181 @@ def generate_nudge(idea, mood="low", n_candidates=8, max_rounds=3):
 
 
 # Streamlit UI
-st.set_page_config(page_title="FLAN-T5 Motivation Nudge Generator", layout="centered")
-st.title("🧠 FLAN-T5 Motivation Nudge Generator")
+st.set_page_config(
+    page_title="Motivation Studio", page_icon=":sparkles:", layout="wide"
+)
+
 st.markdown(
-    "**Generate personalized motivational nudges based on your ideas and mood.**"
+    """
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;600;700&display=swap');
+
+    .stApp {
+        font-family: 'Manrope', sans-serif;
+        background:
+            radial-gradient(circle at 12% 12%, #ffeecf 0%, rgba(255, 238, 207, 0) 35%),
+            radial-gradient(circle at 86% 18%, #d8f3f0 0%, rgba(216, 243, 240, 0) 30%),
+            linear-gradient(180deg, #f6f8fb 0%, #eef2f6 100%);
+    }
+
+    .hero-card {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #334155 100%);
+        border-radius: 20px;
+        padding: 1.4rem 1.5rem;
+        color: #f8fafc;
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.26);
+        animation: rise 450ms ease;
+    }
+
+    .hero-title {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 2.05rem;
+        line-height: 1.1;
+        margin-bottom: 0.45rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+    }
+
+    .hero-sub {
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #dbeafe;
+        margin: 0;
+    }
+
+    .panel {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #dbe2ea;
+        border-radius: 16px;
+        padding: 1rem 1.05rem;
+        box-shadow: 0 6px 20px rgba(2, 6, 23, 0.08);
+        animation: rise 520ms ease;
+    }
+
+    .nudge-card {
+        border-left: 5px solid #f97316;
+        background: #fff7ed;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .nudge-text {
+        font-size: 1.05rem;
+        line-height: 1.65;
+        color: #7c2d12;
+        margin: 0;
+    }
+
+    @keyframes rise {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 900px) {
+        .hero-title { font-size: 1.55rem; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
-st.subheader("Your Idea/Task:")
-user_idea = st.text_area(
-    "Describe what you're working on or thinking about:",
-    "Start working on my graduation project report.",
-    height=100,
+if "last_nudge" not in st.session_state:
+    st.session_state.last_nudge = ""
+
+st.markdown(
+    """
+    <section class="hero-card">
+      <div class="hero-title">Motivation Studio</div>
+      <p class="hero-sub">
+        Turn your current task into a focused, encouraging nudge powered by FLAN-T5 + LoRA.
+      </p>
+    </section>
+    """,
+    unsafe_allow_html=True,
 )
 
-st.subheader("Your Current Mood:")
-mood_option = st.radio(
-    "Select your current motivation level:",
-    ("Low Motivation", "High Motivation"),
-    index=0,  # Default to Low Motivation
-)
+st.write("")
+left_col, right_col = st.columns([1.3, 1], gap="large")
 
-# Map mood option to model's expected input
-model_mood = "low" if mood_option == "Low Motivation" else "high"
+with left_col:
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.subheader("Describe Your Task")
 
-if st.button("Generate Nudge 💪"):
-    if user_idea:
-        with st.spinner("Generating your personalized nudge..."):
-            try:
-                nudge = generate_nudge(user_idea, model_mood)
-                st.success("Here's your nudge:")
-                st.info(f"**{nudge}**")
-            except Exception as exc:
-                st.error(f"Generation failed: {exc}")
+    example_ideas = [
+        "Finish the graduation project report introduction.",
+        "Review one chapter and take concise notes.",
+        "Prepare slides for tomorrow's presentation.",
+    ]
+
+    selected_example = st.selectbox(
+        "Quick Start (optional)",
+        options=["Use your own task"] + example_ideas,
+        index=0,
+    )
+
+    default_idea = (
+        "Start working on my graduation project report."
+        if selected_example == "Use your own task"
+        else selected_example
+    )
+
+    user_idea = st.text_area(
+        "What are you working on now?",
+        value=default_idea,
+        height=120,
+        placeholder="Write your current task in one sentence...",
+    )
+
+    mood_option = st.radio(
+        "Current Motivation Level",
+        ("Low Motivation", "High Motivation"),
+        horizontal=True,
+        index=0,
+    )
+
+    # Map mood option to model's expected input
+    model_mood = "low" if mood_option == "Low Motivation" else "high"
+
+    if st.button("Generate Nudge", type="primary", use_container_width=True):
+        if user_idea and user_idea.strip():
+            with st.spinner("Generating your personalized nudge..."):
+                try:
+                    st.session_state.last_nudge = generate_nudge(user_idea, model_mood)
+                except Exception as exc:
+                    st.error(f"Generation failed: {exc}")
+        else:
+            st.warning("Please enter an idea or task to generate a nudge.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with right_col:
+    st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.subheader("Your Nudge")
+
+    if st.session_state.last_nudge:
+        safe_nudge = html.escape(st.session_state.last_nudge)
+        word_count = len(st.session_state.last_nudge.split())
+        st.caption(f"Length: {word_count} words")
+        st.markdown(
+            f"""
+            <div class="nudge-card">
+                <p class="nudge-text">{safe_nudge}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     else:
-        st.warning("Please enter an idea or task to generate a nudge.")
+        st.info("Generate your first nudge to see it here.")
 
-st.markdown("---")
-st.markdown(
-    "This project is part of a graduation project showcasing FLAN-T5 fine-tuning with LoRA for personalized motivational text generation. Dataset custom-built from scratch."
-)
+    st.markdown("---")
+    st.markdown("**How this works**")
+    st.markdown(
+        "1. You provide a task and motivation level.\n"
+        "2. The model creates several candidate nudges.\n"
+        "3. The best matching nudge is shown in this panel."
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.write("")
+st.caption("Built with FLAN-T5 + LoRA fine-tuning on a custom motivational dataset.")
